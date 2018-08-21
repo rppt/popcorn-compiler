@@ -229,13 +229,13 @@ static rewrite_context init_src_context(st_handle handle,
   ctx->num_acts = 1;
   ctx->act = 0;
   ctx->regs = regset;
-  ctx->stack_base = sp_base;
+  ctx_set_stack_base(ctx, sp_base);
 
   init_data_pools(ctx);
   list_init(fixup, &ctx->stack_pointers);
   bootstrap_first_frame(ctx, regset); // Sets up initial register set
-  ctx->stack = REGOPS(ctx)->sp(ACT(ctx).regs);
-  ASSERT(ctx->stack, "invalid stack pointer\n");
+  ctx_set_stack(ctx, REGOPS(ctx)->sp(ACT(ctx).regs));
+  ASSERT(ctx_stack(ctx), "invalid stack pointer\n");
 
   /*
    * Find the initial call site and set up the outermost frame's CFA in
@@ -273,7 +273,7 @@ static rewrite_context init_dest_context(st_handle handle,
   ctx->num_acts = 1;
   ctx->act = 0;
   ctx->regs = regset;
-  ctx->stack_base = sp_base;
+  ctx_set_stack_base(ctx, sp_base);
 
   init_data_pools(ctx);
   list_init(fixup, &ctx->stack_pointers);
@@ -390,13 +390,13 @@ static void unwind_and_size(rewrite_context src,
   dest->act = 0;
 
   /* Set destination stack pointer and finish setting up outermost frame */
-  dest->stack = PROPS(dest)->align_sp(dest->stack_base - stack_size);
-  bootstrap_first_frame_funcentry(dest, dest->stack);
+  ctx_set_stack(dest, PROPS(dest)->align_sp(ctx_stack_base(dest) - stack_size));
+  bootstrap_first_frame_funcentry(dest, ctx_stack(dest));
   fn = get_function_address(src->handle, REGOPS(src)->pc(ACT(src).regs));
   ASSERT(fn, "Could not find function address of outermost frame\n");
   REGOPS(dest)->set_pc(ACT(dest).regs, fn);
 
-  ST_INFO("Top of new stack: %p\n", dest->stack);
+  ST_INFO("Top of new stack: %p\n", ctx_stack(dest));
   ST_INFO("Rewriting destination as if entering function @ %p\n", fn);
 
   /* Clear the callee-saved bitmaps for all destination frames. */
@@ -642,4 +642,3 @@ static void rewrite_frame(rewrite_context src, rewrite_context dest)
 
   TIMER_FG_STOP(rewrite_frame);
 }
-

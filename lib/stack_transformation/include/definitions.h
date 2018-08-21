@@ -205,6 +205,11 @@ struct _st_handle
 
 typedef struct _st_handle* st_handle;
 
+struct stack_info {
+	void *stack_base; /* highest stack address */
+	void *stack; /* top of stack (lowest stack address) */
+};
+
 /*
  * Stack rewriting context.  Used to hold current stack information for
  * rewriting.  Instantiated twice for each thread inside of rewriting functions
@@ -216,8 +221,7 @@ struct rewrite_context
   st_handle handle;
 
   /* Stack & register information, will contain transformation results. */
-  void* stack_base; /* highest stack address */
-  void* stack; /* top of stack (lowest stack address) */
+  struct stack_info st_info;
   void* regs; /* register set, for copying in & out */
 
   /* Meta-data for stack activations. */
@@ -231,6 +235,27 @@ struct rewrite_context
   STORAGE_TYPE* callee_saved_pool; /* Callee-saved registers (bitmaps) */
 };
 
+static inline void *ctx_stack(struct rewrite_context *ctx)
+{
+	return ctx->st_info.stack;
+}
+
+static inline void *ctx_stack_base(struct rewrite_context *ctx)
+{
+	return ctx->st_info.stack_base;
+}
+
+static inline void ctx_set_stack(struct rewrite_context *ctx, void *stack)
+{
+	ctx->st_info.stack = stack;
+}
+
+static inline void ctx_set_stack_base(struct rewrite_context *ctx,
+				      void *stack_base)
+{
+	ctx->st_info.stack_base = stack_base;
+}
+
 typedef struct rewrite_context* rewrite_context;
 
 /* Macros to access activation information. */
@@ -243,4 +268,3 @@ typedef struct rewrite_context* rewrite_context;
 #define PROPS( ctx ) ctx->handle->props
 
 #endif /* _DEFINITIONS_H */
-

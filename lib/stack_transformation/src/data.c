@@ -211,7 +211,7 @@ void* points_to_stack(const rewrite_context ctx,
     }
 
     /* Check if we're within the stack's bounds.  If not, wipe the pointer */
-    if(stack_addr < ctx->stack || ctx->stack_base <= stack_addr)
+    if(stack_addr < ctx_stack(ctx) || ctx_stack_base(ctx) <= stack_addr)
       stack_addr = NULL;
   }
 
@@ -521,4 +521,3 @@ static void apply_arch_operation(rewrite_context ctx,
 
   if(callee_dest) memcpy(callee_dest, dest, val->operand_size);
 }
-
