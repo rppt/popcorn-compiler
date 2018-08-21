@@ -5,7 +5,7 @@
 VER_MAJ := 0
 VER_MIN := 8
 
-POPCORN := /usr/local/popcorn
+POPCORN ?= /usr/local/popcorn
 COMMON  := $(shell readlink -f ../../common)
 
 BUILD := build
