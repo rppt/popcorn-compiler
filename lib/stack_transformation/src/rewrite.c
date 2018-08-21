@@ -246,6 +246,7 @@ static rewrite_context init_src_context(st_handle handle,
     ST_ERR(1, "could not get source call site information for outermost frame "
            "(address=%p)\n", REGOPS(ctx)->pc(ACT(ctx).regs));
   ACT(ctx).cfa = calculate_cfa(ctx, 0);
+  ACT(ctx).fp = cfa_to_fp(ctx, ACT(ctx).cfa);
 
   TIMER_STOP(init_src_context);
   return ctx;
@@ -377,6 +378,7 @@ static void unwind_and_size(rewrite_context src,
     /* Set the CFA for the current frame, which becomes the next frame's SP */
     // Note: we need both the SP & call site information to set up CFA
     ACT(src).cfa = calculate_cfa(src, src->act);
+    ACT(src).fp = cfa_to_fp(src, ACT(src).cfa);
   }
   while(!first_frame(ACT(src).site.id));
 
@@ -461,7 +463,7 @@ static bool rewrite_val(rewrite_context src, const live_value* val_src,
    */
   if((stack_addr = points_to_stack(src, val_src)))
   {
-    if(stack_addr >= PREV_ACT(src).cfa || src->act == 0)
+    if((uint64_t)stack_addr >= PREV_ACT(src).cfa || src->act == 0)
     {
       ST_INFO("Adding fixup for pointer-to-stack %p\n", stack_addr);
       fixup_data.src_addr = stack_addr;
@@ -470,7 +472,7 @@ static bool rewrite_val(rewrite_context src, const live_value* val_src,
       list_add(fixup, &dest->stack_pointers, fixup_data);
 
       /* Are we pointing to a value within the same frame? */
-      if(stack_addr < ACT(src).cfa) needs_local_fixup = true;
+      if((uint64_t)stack_addr < ACT(src).cfa) needs_local_fixup = true;
     }
     // Note: it's an error for a pointer to point to frames down the call
     // chain, this is most likely uninitialized pointer data
@@ -527,7 +529,7 @@ fixup_local_pointers(rewrite_context src, rewrite_context dest)
     // TODO If the code creates a pointer to an argument, is LLVM forced to
     // create an alloca and copy the argument into the local stack space?
     // Otherwise, how does LLVM understand argument/register conventions?
-    if(fixup_node->data.src_addr <= ACT(src).cfa) // Is fixup in this frame?
+    if((uint64_t)fixup_node->data.src_addr <= ACT(src).cfa) // Is fixup in this frame?
     {
       // Note: we should have resolved all fixups for this frame from frames
       // down the call chain by this point.  If not, the fixup may be
@@ -593,7 +595,8 @@ static void rewrite_frame(rewrite_context src, rewrite_context dest)
   bool needs_local_fixup = false;
 
   TIMER_FG_START(rewrite_frame);
-  ST_INFO("Rewriting frame (CFA: %p -> %p)\n", ACT(src).cfa, ACT(dest).cfa);
+  ST_INFO("Rewriting frame (CFA: %lx (%p) -> %lx (%p))\n",
+	  ACT(src).cfa, ACT(src).fp, ACT(dest).cfa, ACT(dest).fp);
 
   /* Copy live values */
   src_offset = ACT(src).site.live_offset;

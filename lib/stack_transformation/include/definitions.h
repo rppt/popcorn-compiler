@@ -148,7 +148,8 @@ define_list_type(fixup);
 typedef struct activation
 {
   call_site site; /* call site information */
-  void* cfa; /* canonical frame address */
+  uint64_t cfa; /* canonical frame address */
+  void *fp; /* pointer to current frame */
   regset_t regs; /* register values */
   bitmap callee_saved; /* callee-saved registers stored in prologue */
 } activation;
@@ -257,6 +258,11 @@ static inline void ctx_set_stack_base(struct rewrite_context *ctx,
 }
 
 typedef struct rewrite_context* rewrite_context;
+
+static inline void *cfa_to_fp(rewrite_context ctx, uint64_t cfa)
+{
+  return (void *)cfa;
+}
 
 /* Macros to access activation information. */
 #define ACT( ctx ) ctx->acts[ctx->act]

@@ -94,7 +94,7 @@ struct regops_t
   void (*set_ra_reg)(regset_t regset, void* ra);
 
   /* Architecture-specific frame base pointer setup */
-  void (*setup_fbp)(regset_t regset, void* cfa);
+  void (*setup_fbp)(regset_t regset, uint64_t cfa);
 
   /////////////////////////////////////////////////////////////////////////////
   // General-purpose register access
@@ -118,4 +118,3 @@ typedef struct regops_t* regops_t;
 typedef const struct regops_t* const_regops_t;
 
 #endif /* _REGS_H */
-

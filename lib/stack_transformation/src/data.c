@@ -256,7 +256,7 @@ void* points_to_data(const rewrite_context src,
 void set_return_address(rewrite_context ctx, void* retaddr)
 {
   ASSERT(retaddr, "invalid return address\n");
-  *(void**)(ACT(ctx).cfa + PROPS(ctx)->ra_offset) = retaddr;
+  *(void**)(ACT(ctx).fp + PROPS(ctx)->ra_offset) = retaddr;
 }
 
 /*
@@ -271,7 +271,7 @@ void set_return_address_funcentry(rewrite_context ctx, void* retaddr)
   if(REGOPS(ctx)->has_ra_reg)
     REGOPS(ctx)->set_ra_reg(ACT(ctx).regs, retaddr);
   else
-    *(void**)(ACT(ctx).cfa + PROPS(ctx)->ra_offset) = retaddr;
+    *(void**)(ACT(ctx).fp + PROPS(ctx)->ra_offset) = retaddr;
 }
 
 /*

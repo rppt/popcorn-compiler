@@ -30,7 +30,7 @@ bool first_frame(uint64_t id);
  * @param act a function activation number
  * @return the activation's canonical frame address
  */
-void* calculate_cfa(rewrite_context ctx, int act);
+uint64_t calculate_cfa(rewrite_context ctx, int act);
 
 /*
  * Boot strap the outermost frame's information.  Only needed during
@@ -115,4 +115,3 @@ void* get_register_save_loc(rewrite_context ctx,
 void clear_activation(st_handle handle, activation* act);
 
 #endif /* _UNWIND_H */
-

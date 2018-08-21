@@ -90,17 +90,19 @@ static inline void setup_frame_bounds(rewrite_context ctx, int act)
   ASSERT(ctx->acts[act - 1].cfa, "Invalid CFA for frame %d\n", act - 1);
   ASSERT(ctx->acts[act].site.addr, "Invalid call site information\n");
 
-  new_sp = ctx->acts[act - 1].cfa;
+  new_sp = (void *)ctx->acts[act - 1].cfa;
   REGOPS(ctx)->set_sp(ctx->acts[act].regs, new_sp);
   ctx->acts[act].cfa = calculate_cfa(ctx, act);
+  ctx->acts[act].fp = cfa_to_fp(ctx, ctx->acts[act].cfa);
   REGOPS(ctx)->setup_fbp(ctx->acts[act].regs, ctx->acts[act].cfa);
 
   ASSERT(REGOPS(ctx)->fbp(ctx->acts[act].regs), "Invalid frame pointer\n");
 
-  ST_INFO("New frame bounds: SP=%p, FBP=%p, CFA=%p\n",
+  ST_INFO("New frame bounds: SP=%p, FBP=%p, CFA=%lx (%p)\n",
           REGOPS(ctx)->sp(ctx->acts[act].regs),
           REGOPS(ctx)->fbp(ctx->acts[act].regs),
-          ctx->acts[act].cfa);
+          ctx->acts[act].cfa,
+	  ctx->acts[act].fp);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -123,11 +125,11 @@ bool first_frame(uint64_t id)
  * Calculate the frame's canonical frame address, defined as the stack pointer
  * plus the frame's size.
  */
-inline void* calculate_cfa(rewrite_context ctx, int act)
+inline uint64_t calculate_cfa(rewrite_context ctx, int act)
 {
   ASSERT(ctx->acts[act].site.addr, "Invalid call site information\n");
   ASSERT(REGOPS(ctx)->sp(ctx->acts[act].regs), "Invalid stack pointer\n");
-  return REGOPS(ctx)->sp(ctx->acts[act].regs) + ctx->acts[act].site.frame_size;
+  return (uint64_t)(REGOPS(ctx)->sp(ctx->acts[act].regs) + ctx->acts[act].site.frame_size);
 }
 
 /*
@@ -155,7 +157,8 @@ void bootstrap_first_frame_funcentry(rewrite_context ctx, void* sp)
   setup_callee_saved_bits(ctx, 0);
   ctx->acts[0].regs = ctx->regset_pool;
   REGOPS(ctx)->set_sp(ctx->acts[0].regs, sp);
-  ctx->acts[0].cfa = sp + PROPS(ctx)->cfa_offset_funcentry;
+  ctx->acts[0].cfa = (uint64_t)sp + PROPS(ctx)->cfa_offset_funcentry;
+  ctx->acts[0].fp = cfa_to_fp(ctx, ctx->acts[0].cfa);
 }
 
 /*
@@ -168,7 +171,7 @@ void pop_frame(rewrite_context ctx, bool setup_bounds)
   int next_frame = ctx->act + 1;
 
   TIMER_FG_START(pop_frame);
-  ST_INFO("Popping frame (CFA = %p)\n", ACT(ctx).cfa);
+  ST_INFO("Popping frame (CFA = %lx (%p))\n", ACT(ctx).cfa, ACT(ctx).fp);
 
   setup_regset(ctx, next_frame);
   setup_callee_saved_bits(ctx, next_frame);
@@ -179,7 +182,7 @@ void pop_frame(rewrite_context ctx, bool setup_bounds)
    * FBP/CFA, we still need to set up SP.
    */
   if(setup_bounds) setup_frame_bounds(ctx, next_frame);
-  else REGOPS(ctx)->set_sp(NEXT_ACT(ctx).regs, ACT(ctx).cfa);
+  else REGOPS(ctx)->set_sp(NEXT_ACT(ctx).regs, (void *)ACT(ctx).cfa);
 
   /* Advance to next frame. */
   ctx->act++;
@@ -198,7 +201,7 @@ void pop_frame_funcentry(rewrite_context ctx)
   int next_frame = ctx->act + 1;
 
   TIMER_FG_START(pop_frame);
-  ST_INFO("Popping frame (CFA = %p)\n", ACT(ctx).cfa);
+  ST_INFO("Popping frame (CFA = %lx (%p))\n", ACT(ctx).cfa, ACT(ctx).fp);
 
   setup_regset(ctx, next_frame);
   setup_callee_saved_bits(ctx, next_frame);
@@ -265,9 +268,9 @@ void clear_activation(st_handle handle, activation* act)
   ASSERT(act, "invalid arguments to free_activation()\n");
 
   memset(&act->site, 0, sizeof(call_site));
-  act->cfa = NULL;
+  act->cfa = 0;
+  act->fp = 0;
   memset(act->regs, 0, handle->regops->regset_size);
   act->regs = NULL;
   memset(&act->callee_saved, 0, sizeof(bitmap));
 }
-

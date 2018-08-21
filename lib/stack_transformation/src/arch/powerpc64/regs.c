@@ -36,7 +36,7 @@ static void set_pc_powerpc64(regset_t regset, void* pc);
 static void set_sp_powerpc64(regset_t regset, void* sp);
 static void set_fbp_powerpc64(regset_t regset, void* fp);
 static void set_ra_reg_powerpc64(regset_t regset, void* ra);
-static void setup_fbp_powerpc64(regset_t regset, void* cfa);
+static void setup_fbp_powerpc64(regset_t regset, uint64_t cfa);
 
 static uint16_t reg_size_powerpc64(uint16_t reg);
 static void* reg_powerpc64(regset_t regset, uint16_t reg);
@@ -177,11 +177,11 @@ static void set_ra_reg_powerpc64(regset_t regset, void* ra)
   cur->regs.lr = ra;
 }
 
-static void setup_fbp_powerpc64(regset_t regset, void* cfa)
+static void setup_fbp_powerpc64(regset_t regset, uint64_t cfa)
 {
   regset_obj_powerpc64* cur = (regset_obj_powerpc64*)regset;
   ASSERT(cur->regs.r[POWERPC64_SP_REG], "Null stack pointer\n");
-  cur->regs.r[POWERPC64_FBP_REG] = (uint64_t)cur->regs.r[POWERPC64_SP_REG];
+  cur->regs.r[POWERPC64_FBP_REG] = cur->regs.r[POWERPC64_SP_REG];
 }
 
 static uint16_t reg_size_powerpc64(uint16_t reg)
@@ -290,4 +290,3 @@ static void* reg_powerpc64(regset_t regset, uint16_t reg)
   ST_ERR(1, "unknown/invalid register %u (powerpc64)\n", reg);
   return NULL;
 }
-

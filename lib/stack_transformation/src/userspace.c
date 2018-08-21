@@ -19,6 +19,8 @@
 #include "arch/x86_64/regs.h"
 #include "arch/aarch64/regs.h"
 
+#define __maybe_unused             __attribute__((unused))
+
 ///////////////////////////////////////////////////////////////////////////////
 // File-local API & definitions
 ///////////////////////////////////////////////////////////////////////////////
@@ -43,7 +45,7 @@ extern void* __popcorn_stack_base;
  * allocates them and we can divide the stack in half for rewriting.  Also,
  * calculate stack bounds for main thread.
  */
-static bool prep_stack(void);
+static bool __maybe_unused prep_stack(void);
 
 /*
  * Get main thread's stack information from procfs.
@@ -275,7 +277,7 @@ int st_userspace_rewrite(void* sp,
  * allocates them and we can divide the stack in half for rewriting.  Also,
  * calculate stack bounds for main thread.
  */
-static bool prep_stack(void)
+static bool __maybe_unused prep_stack(void)
 {
   long ret;
   size_t offset;
