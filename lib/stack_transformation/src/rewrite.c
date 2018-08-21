@@ -85,41 +85,9 @@ static void rewrite_frame(rewrite_context src, rewrite_context dest);
 // Perform stack transformation
 ///////////////////////////////////////////////////////////////////////////////
 
-/*
- * Perform stack transformation in its entirety, from source to destination.
- */
-int st_rewrite_stack(st_handle handle_src,
-                     void* regset_src,
-                     void* sp_base_src,
-                     st_handle handle_dest,
-                     void* regset_dest,
-                     void* sp_base_dest)
+static int __st_rewrite_stack(rewrite_context src, rewrite_context dest)
 {
-  rewrite_context src, dest;
   uint64_t* saved_fbp;
-
-  if(!handle_src || !regset_src || !sp_base_src ||
-     !handle_dest || !regset_dest || !sp_base_dest)
-  {
-    ST_WARN("invalid arguments\n");
-    return 1;
-  }
-
-  TIMER_START(st_rewrite_stack);
-
-  ST_INFO("--> Initializing rewrite (%s -> %s) <--\n",
-          arch_name(handle_src->arch), arch_name(handle_dest->arch));
-
-  /* Initialize rewriting contexts. */
-  src = init_src_context(handle_src, regset_src, sp_base_src);
-  dest = init_dest_context(handle_dest, regset_dest, sp_base_dest);
-
-  if(!src || !dest)
-  {
-    if(src) free_context(src);
-    if(dest) free_context(dest);
-    return 1;
-  }
 
   ST_INFO("--> Unwinding source stack to find live activations <--\n");
 
@@ -178,6 +146,44 @@ int st_rewrite_stack(st_handle handle_src,
 #endif
 
   return 0;
+}
+
+/*
+ * Perform stack transformation in its entirety, from source to destination.
+ */
+int st_rewrite_stack(st_handle handle_src,
+                     void* regset_src,
+                     void* sp_base_src,
+                     st_handle handle_dest,
+                     void* regset_dest,
+                     void* sp_base_dest)
+{
+  rewrite_context src, dest;
+
+  if(!handle_src || !regset_src || !sp_base_src ||
+     !handle_dest || !regset_dest || !sp_base_dest)
+  {
+    ST_WARN("invalid arguments\n");
+    return 1;
+  }
+
+  TIMER_START(st_rewrite_stack);
+
+  ST_INFO("--> Initializing rewrite (%s -> %s) <--\n",
+          arch_name(handle_src->arch), arch_name(handle_dest->arch));
+
+  /* Initialize rewriting contexts. */
+  src = init_src_context(handle_src, regset_src, sp_base_src);
+  dest = init_dest_context(handle_dest, regset_dest, sp_base_dest);
+
+  if(!src || !dest)
+  {
+    if(src) free_context(src);
+    if(dest) free_context(dest);
+    return 1;
+  }
+
+  return __st_rewrite_stack(src, dest);
 }
 
 /*
