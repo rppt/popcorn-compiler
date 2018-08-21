@@ -92,12 +92,14 @@ static bool alloc_x86_64_fn = false;
  */
 void __st_userspace_ctor(void)
 {
+#ifndef NOCTORS
   /* Initialize the stack for the main thread. */
   if(!prep_stack())
   {
     ST_WARN("could not prepare stack for user-space rewriting\n");
     return;
   }
+#endif
 
   /* Prepare libELF. */
   if(elf_version(EV_CURRENT) == EV_NONE)
@@ -105,6 +107,10 @@ void __st_userspace_ctor(void)
     ST_WARN("could not prepare libELF for reading binary\n");
     return;
   }
+
+#ifdef NOCTORS
+  return;
+#endif
 
   /*
    * Initialize ST handles - tries the following approaches to finding the
@@ -151,6 +157,7 @@ void __st_userspace_ctor(void)
  */
 void __st_userspace_dtor(void)
 {
+#ifndef NOCTORS
   if(aarch64_handle)
   {
     st_destroy(aarch64_handle);
@@ -168,6 +175,7 @@ void __st_userspace_dtor(void)
     st_destroy(x86_64_handle);
     if(alloc_x86_64_fn) free(x86_64_fn);
   }
+#endif
 }
 
 /*
@@ -475,4 +483,3 @@ static int userspace_rewrite_internal(void* sp,
 
   return retval;
 }
-
