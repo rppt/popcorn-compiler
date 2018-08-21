@@ -118,7 +118,7 @@ static int __st_rewrite_stack(rewrite_context src, rewrite_context dest)
     saved_fbp = get_savedfbp_loc(dest);
     ASSERT(saved_fbp, "invalid saved frame pointer location\n");
     pop_frame(dest, true);
-    *saved_fbp = (uint64_t)REGOPS(dest)->fbp(ACT(dest).regs);
+    *saved_fbp = fbp(dest, ACT(dest).regs);
     ST_INFO("Old FP saved to %p\n", saved_fbp);
   }
 
@@ -234,7 +234,7 @@ static rewrite_context init_src_context(st_handle handle,
   init_data_pools(ctx);
   list_init(fixup, &ctx->stack_pointers);
   bootstrap_first_frame(ctx, regset); // Sets up initial register set
-  ctx_set_stack(ctx, REGOPS(ctx)->sp(ACT(ctx).regs));
+  ctx_set_stack(ctx, stack_pointer(ctx, ACT(ctx).regs)); // FIXME: which
   ASSERT(ctx_stack(ctx), "invalid stack pointer\n");
 
   /*

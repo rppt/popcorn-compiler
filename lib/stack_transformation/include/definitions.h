@@ -236,6 +236,15 @@ struct rewrite_context
   STORAGE_TYPE* callee_saved_pool; /* Callee-saved registers (bitmaps) */
 };
 
+/* Macros to access activation information. */
+#define ACT( ctx ) ctx->acts[ctx->act]
+#define PREV_ACT( ctx ) ctx->acts[ctx->act - 1]
+#define NEXT_ACT( ctx ) ctx->acts[ctx->act + 1]
+
+/* Macros to access register set functions & properties. */
+#define REGOPS( ctx ) ctx->handle->regops
+#define PROPS( ctx ) ctx->handle->props
+
 static inline void *ctx_stack(struct rewrite_context *ctx)
 {
 	return ctx->st_info.stack;
@@ -264,13 +273,39 @@ static inline void *cfa_to_fp(rewrite_context ctx, uint64_t cfa)
   return (void *)cfa;
 }
 
-/* Macros to access activation information. */
-#define ACT( ctx ) ctx->acts[ctx->act]
-#define PREV_ACT( ctx ) ctx->acts[ctx->act - 1]
-#define NEXT_ACT( ctx ) ctx->acts[ctx->act + 1]
+static inline uint64_t fbp(rewrite_context ctx, regset_t regs)
+{
+	return (uint64_t)REGOPS(ctx)->__fbp(regs);
+}
 
-/* Macros to access register set functions & properties. */
-#define REGOPS( ctx ) ctx->handle->regops
-#define PROPS( ctx ) ctx->handle->props
+static inline void set_fbp(rewrite_context ctx, regset_t regs, void *fbp)
+{
+	REGOPS(ctx)->__set_fbp(regs, fbp);
+}
+
+static inline void *frame_pointer(rewrite_context ctx, regset_t regs)
+{
+	return REGOPS(ctx)->__fbp(regs);
+}
+
+static inline uint64_t sp(rewrite_context ctx, regset_t regs)
+{
+	return (uint64_t)REGOPS(ctx)->__sp(regs);
+}
+
+static inline void set_sp(rewrite_context ctx, regset_t regs, void *sp)
+{
+	REGOPS(ctx)->__set_sp(regs, sp);
+}
+
+static inline void *stack_pointer(rewrite_context ctx, regset_t regs)
+{
+	return REGOPS(ctx)->__sp(regs);
+}
+
+static inline void setup_fbp(rewrite_context ctx, regset_t regs, uint64_t fbp)
+{
+	REGOPS(ctx)->__setup_fbp(regs, fbp);
+}
 
 #endif /* _DEFINITIONS_H */

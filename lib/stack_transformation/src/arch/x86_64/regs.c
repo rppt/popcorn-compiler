@@ -65,15 +65,15 @@ const struct regops_t regs_x86_64 = {
   .regset_copyout = regset_copyout_x86_64,
 
   .pc = pc_x86_64,
-  .sp = sp_x86_64,
-  .fbp = fbp_x86_64,
+  .__sp = sp_x86_64,
+  .__fbp = fbp_x86_64,
   .ra_reg = ra_reg_x86_64,
 
   .set_pc = set_pc_x86_64,
-  .set_sp = set_sp_x86_64,
-  .set_fbp = set_fbp_x86_64,
+  .__set_sp = set_sp_x86_64,
+  .__set_fbp = set_fbp_x86_64,
   .set_ra_reg = set_ra_reg_x86_64,
-  .setup_fbp = setup_fbp_x86_64,
+  .__setup_fbp = setup_fbp_x86_64,
 
   .reg_size = reg_size_x86_64,
   .reg = reg_x86_64,

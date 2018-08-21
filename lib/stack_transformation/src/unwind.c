@@ -53,9 +53,11 @@ static inline void restore_callee_saved_regs(rewrite_context ctx, int act)
 
   for(i = unwind_start; i < unwind_end; i++)
   {
-    saved_loc = REGOPS(ctx)->fbp(ctx->acts[act - 1].regs) + locs[i].offset;
-    ST_INFO("Callee-saved: %u at FBP + %d (%p)\n",
-            locs[i].reg, locs[i].offset, saved_loc);
+    uint64_t _fbp = fbp(ctx, ctx->acts[act - 1].regs);
+    uint64_t saved_loc_logical = _fbp + (uint64_t)locs[i].offset;
+    saved_loc = frame_pointer(ctx, ctx->acts[act - 1].regs) + locs[i].offset;
+    ST_INFO("Callee-saved: %u at FBP + %d (%lx - %p)\n",
+            locs[i].reg, locs[i].offset, saved_loc_logical, saved_loc);
     memcpy(REGOPS(ctx)->reg(ctx->acts[act].regs, locs[i].reg), saved_loc,
            PROPS(ctx)->callee_reg_size(locs[i].reg));
     bitmap_set(ctx->acts[act - 1].callee_saved, locs[i].reg);
@@ -91,16 +93,16 @@ static inline void setup_frame_bounds(rewrite_context ctx, int act)
   ASSERT(ctx->acts[act].site.addr, "Invalid call site information\n");
 
   new_sp = (void *)ctx->acts[act - 1].cfa;
-  REGOPS(ctx)->set_sp(ctx->acts[act].regs, new_sp);
+  set_sp(ctx, ctx->acts[act].regs, new_sp); // FIXME:
   ctx->acts[act].cfa = calculate_cfa(ctx, act);
   ctx->acts[act].fp = cfa_to_fp(ctx, ctx->acts[act].cfa);
-  REGOPS(ctx)->setup_fbp(ctx->acts[act].regs, ctx->acts[act].cfa);
+  setup_fbp(ctx, ctx->acts[act].regs, ctx->acts[act].cfa);
 
-  ASSERT(REGOPS(ctx)->fbp(ctx->acts[act].regs), "Invalid frame pointer\n");
+  ASSERT(fbp(ctx, ctx->acts[act].regs), "Invalid frame pointer\n");
 
-  ST_INFO("New frame bounds: SP=%p, FBP=%p, CFA=%lx (%p)\n",
-          REGOPS(ctx)->sp(ctx->acts[act].regs),
-          REGOPS(ctx)->fbp(ctx->acts[act].regs),
+  ST_INFO("New frame bounds: SP=%lx (%p), FBP=%lx (%p), CFA=%lx (%p)\n",
+          sp(ctx, ctx->acts[act].regs), stack_pointer(ctx, ctx->acts[act].regs),
+          fbp(ctx, ctx->acts[act].regs), frame_pointer(ctx, ctx->acts[act].regs),
           ctx->acts[act].cfa,
 	  ctx->acts[act].fp);
 }
@@ -128,8 +130,8 @@ bool first_frame(uint64_t id)
 inline uint64_t calculate_cfa(rewrite_context ctx, int act)
 {
   ASSERT(ctx->acts[act].site.addr, "Invalid call site information\n");
-  ASSERT(REGOPS(ctx)->sp(ctx->acts[act].regs), "Invalid stack pointer\n");
-  return (uint64_t)(REGOPS(ctx)->sp(ctx->acts[act].regs) + ctx->acts[act].site.frame_size);
+  ASSERT(sp(ctx, ctx->acts[act].regs), "Invalid stack pointer\n");
+  return sp(ctx, ctx->acts[act].regs) + ctx->acts[act].site.frame_size;
 }
 
 /*
@@ -156,7 +158,7 @@ void bootstrap_first_frame_funcentry(rewrite_context ctx, void* sp)
   ASSERT(ctx->act == 0, "Can only bootstrap outermost frame\n");
   setup_callee_saved_bits(ctx, 0);
   ctx->acts[0].regs = ctx->regset_pool;
-  REGOPS(ctx)->set_sp(ctx->acts[0].regs, sp);
+  set_sp(ctx, ctx->acts[0].regs, sp); // FIXME:
   ctx->acts[0].cfa = (uint64_t)sp + PROPS(ctx)->cfa_offset_funcentry;
   ctx->acts[0].fp = cfa_to_fp(ctx, ctx->acts[0].cfa);
 }
@@ -182,7 +184,7 @@ void pop_frame(rewrite_context ctx, bool setup_bounds)
    * FBP/CFA, we still need to set up SP.
    */
   if(setup_bounds) setup_frame_bounds(ctx, next_frame);
-  else REGOPS(ctx)->set_sp(NEXT_ACT(ctx).regs, (void *)ACT(ctx).cfa);
+  else set_sp(ctx, NEXT_ACT(ctx).regs, (void *)ACT(ctx).cfa); // FIXME:
 
   /* Advance to next frame. */
   ctx->act++;
@@ -214,7 +216,7 @@ void pop_frame_funcentry(rewrite_context ctx)
     REGOPS(ctx)->set_pc(NEXT_ACT(ctx).regs, REGOPS(ctx)->ra_reg(ACT(ctx).regs));
   else
     REGOPS(ctx)->set_pc(NEXT_ACT(ctx).regs,
-                        *(void**)REGOPS(ctx)->sp(ACT(ctx).regs));
+			*(void **)stack_pointer(ctx, ACT(ctx).regs));
   ST_INFO("Return address: %p\n", REGOPS(ctx)->pc(NEXT_ACT(ctx).regs));
 
   setup_frame_bounds(ctx, next_frame);
@@ -223,7 +225,7 @@ void pop_frame_funcentry(rewrite_context ctx)
    * We also need to set the current frame's FBP to the caller's FBP since it
    * hasn't been stored on the stack yet.
    */
-  REGOPS(ctx)->set_fbp(ACT(ctx).regs, REGOPS(ctx)->fbp(NEXT_ACT(ctx).regs));
+  set_fbp(ctx, ACT(ctx).regs, (void *)fbp(ctx, NEXT_ACT(ctx).regs)); // FIXME:
 
   /* Advance to next frame. */
   ctx->act++;
@@ -252,7 +254,7 @@ void* get_register_save_loc(rewrite_context ctx, activation* act, uint16_t reg)
   {
     if(unwind_locs[i].reg == reg)
     {
-      addr = REGOPS(ctx)->fbp(act->regs) + unwind_locs[i].offset;
+      addr = frame_pointer(ctx, act->regs) + unwind_locs[i].offset;
       break;
     }
   }

@@ -69,15 +69,15 @@ const struct regops_t regs_powerpc64 = {
   .regset_copyout = regset_copyout_powerpc64,
 
   .pc = pc_powerpc64,
-  .sp = sp_powerpc64,
-  .fbp = fbp_powerpc64,
+  .__sp = sp_powerpc64,
+  .__fbp = fbp_powerpc64,
   .ra_reg = ra_reg_powerpc64,
 
   .set_pc = set_pc_powerpc64,
-  .set_sp = set_sp_powerpc64,
-  .set_fbp = set_fbp_powerpc64,
+  .__set_sp = set_sp_powerpc64,
+  .__set_fbp = set_fbp_powerpc64,
   .set_ra_reg = set_ra_reg_powerpc64,
-  .setup_fbp = setup_fbp_powerpc64,
+  .__setup_fbp = setup_fbp_powerpc64,
 
   .reg_size = reg_size_powerpc64,
   .reg = reg_powerpc64,

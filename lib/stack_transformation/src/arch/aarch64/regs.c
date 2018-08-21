@@ -70,15 +70,15 @@ const struct regops_t regs_aarch64 = {
   .regset_copyout = regset_copyout_aarch64,
 
   .pc = pc_aarch64,
-  .sp = sp_aarch64,
-  .fbp = fbp_aarch64,
+  .__sp = sp_aarch64,
+  .__fbp = fbp_aarch64,
   .ra_reg = ra_reg_aarch64,
 
   .set_pc = set_pc_aarch64,
-  .set_sp = set_sp_aarch64,
-  .set_fbp = set_fbp_aarch64,
+  .__set_sp = set_sp_aarch64,
+  .__set_fbp = set_fbp_aarch64,
   .set_ra_reg = set_ra_reg_aarch64,
-  .setup_fbp = setup_fbp_aarch64,
+  .__setup_fbp = setup_fbp_aarch64,
 
   .reg_size = reg_size_aarch64,
   .reg = reg_aarch64,

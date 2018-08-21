@@ -293,7 +293,7 @@ uint64_t* get_savedfbp_loc(rewrite_context ctx)
 
   ASSERT(index >= unwind_start, "no saved frame base pointer information\n");
 
-  saved_loc = REGOPS(ctx)->fbp(ACT(ctx).regs) + locs[index].offset;
+  saved_loc = frame_pointer(ctx, ACT(ctx).regs) + locs[index].offset;
   return (uint64_t*)saved_loc;
 }
 

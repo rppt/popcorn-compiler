@@ -73,10 +73,10 @@ struct regops_t
   void* (*pc)(const_regset_t regset);
 
   /* Get the stack pointer value */
-  void* (*sp)(const_regset_t regset);
+  void* (*__sp)(const_regset_t regset);
 
   /* Get the frame pointer value */
-  void* (*fbp)(const_regset_t regset);
+  void* (*__fbp)(const_regset_t regset);
 
   /* Get the return address-mapped register's value */
   void* (*ra_reg)(const_regset_t regset);
@@ -85,16 +85,16 @@ struct regops_t
   void (*set_pc)(regset_t regset, void* pc);
 
   /* Set the stack pointer */
-  void (*set_sp)(regset_t regset, void* sp);
+  void (*__set_sp)(regset_t regset, void* sp);
 
   /* Set the frame pointer value */
-  void (*set_fbp)(regset_t regset, void* fp);
+  void (*__set_fbp)(regset_t regset, void* fp);
 
   /* Set the return-address mapped register */
   void (*set_ra_reg)(regset_t regset, void* ra);
 
   /* Architecture-specific frame base pointer setup */
-  void (*setup_fbp)(regset_t regset, uint64_t cfa);
+  void (*__setup_fbp)(regset_t regset, uint64_t cfa);
 
   /////////////////////////////////////////////////////////////////////////////
   // General-purpose register access
