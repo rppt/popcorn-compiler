@@ -110,6 +110,8 @@ struct regops_t
    * Note: this does *NOT* return the register's contents!
    */
   void* (*reg)(regset_t regset, uint16_t reg);
+
+  void (*print)(regset_t regset);
 };
 
 typedef struct regops_t* regops_t;

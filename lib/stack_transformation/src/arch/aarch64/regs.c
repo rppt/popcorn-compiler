@@ -40,6 +40,7 @@ static void setup_fbp_aarch64(regset_t regset, void* cfa);
 
 static uint16_t reg_size_aarch64(uint16_t reg);
 static void* reg_aarch64(regset_t regset, uint16_t reg);
+static void regs_print_aarch64(regset_t regset);
 
 /*
  * Internal definition of aarch64 object, contains aarch64 registers in
@@ -81,6 +82,7 @@ const struct regops_t regs_aarch64 = {
 
   .reg_size = reg_size_aarch64,
   .reg = reg_aarch64,
+  .print = regs_print_aarch64,
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -292,3 +294,16 @@ static void* reg_aarch64(regset_t regset, uint16_t reg)
   return NULL;
 }
 
+static void regs_print_aarch64(regset_t regset)
+{
+  regset_obj_aarch64* cur = (regset_obj_aarch64*)regset;
+  int i;
+
+  ST_INFO("==> aarch64 regs:\n");
+  ST_RAW_INFO("pc: %16lx\tsp %lx\n", (uint64_t)cur->regs.pc, (uint64_t)cur->regs.sp);
+
+  for (i = 0; i < 30; i += 2)
+	  ST_RAW_INFO("x[%2d]: %16lx\tx[%2d] %16lx\n",
+		      i, cur->regs.x[i], i+1, cur->regs.x[i+1]);
+  ST_RAW_INFO("x[%d]: %16lx\n", i, cur->regs.x[i]);
+}

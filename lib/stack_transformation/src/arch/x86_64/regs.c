@@ -35,6 +35,7 @@ static void setup_fbp_x86_64(regset_t regset, void* cfa);
 
 static uint16_t reg_size_x86_64(uint16_t reg);
 static void* reg_x86_64(regset_t regset, uint16_t reg);
+static void regs_print_x86_64(regset_t regset);
 
 /*
  * Internal definition of x86-64 object, contains x86-64 registers in addition
@@ -76,6 +77,7 @@ const struct regops_t regs_x86_64 = {
 
   .reg_size = reg_size_x86_64,
   .reg = reg_x86_64,
+  .print = regs_print_x86_64,
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -268,3 +270,21 @@ static void* reg_x86_64(regset_t regset, uint16_t reg)
   return NULL;
 }
 
+static void regs_print_x86_64(regset_t regset)
+{
+  regset_obj_x86_64* cur = (regset_obj_x86_64*)regset;
+
+  ST_INFO("==> x86_64 regs:\n");
+  ST_RAW_INFO("ip: %16lx\tsp %16lx\n", (uint64_t)cur->regs.rip, cur->regs.rsp);
+  ST_RAW_INFO("bp: %16lx\tflags %16lx\n", cur->regs.rbp, cur->regs.rflags);
+  ST_RAW_INFO("rax: %16lx\trbx %16lx\n", cur->regs.rax, cur->regs.rbx);
+  ST_RAW_INFO("rcx: %16lx\trdx %16lx\n", cur->regs.rcx, cur->regs.rdx);
+  ST_RAW_INFO("rdi: %16lx\trsi %16lx\n", cur->regs.rdi, cur->regs.rsi);
+  ST_RAW_INFO("r8:  %16lx\tr8  %16lx\n", cur->regs.r8, cur->regs.r9);
+  ST_RAW_INFO("r10: %16lx\tr11 %16lx\n", cur->regs.r10, cur->regs.r11);
+  ST_RAW_INFO("r12: %16lx\tr13 %16lx\n", cur->regs.r12, cur->regs.r13);
+  ST_RAW_INFO("r14: %16lx\tr15 %16lx\n", cur->regs.r14, cur->regs.r15);
+  ST_RAW_INFO("r14: %16lx\tr15 %16lx\n", cur->regs.r14, cur->regs.r15);
+  ST_RAW_INFO("cs: %x\tss %x\tds %x\n", cur->regs.cs, cur->regs.ss, cur->regs.ds);
+  ST_RAW_INFO("es: %x\tfs %x\tgs %x\n", cur->regs.es, cur->regs.fs, cur->regs.gs);
+}
