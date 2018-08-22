@@ -30,8 +30,8 @@ static __thread struct rewrite_context src_ctx, dest_ctx;
  */
 static rewrite_context init_src_context(st_handle handle,
                                         void* regset,
-                                        void* sp_base);
-
+                                        void* sp_base,
+					void *sp_buf_base);
 /*
  * Initialize an architecture-specific (destination) context using destination
  * stack SP_BASE.  Store destination REGSET pointer to be filled with
@@ -39,7 +39,8 @@ static rewrite_context init_src_context(st_handle handle,
  */
 static rewrite_context init_dest_context(st_handle handle,
                                          void* regset,
-                                         void* sp_base);
+                                         void* sp_base,
+					 void *sp_buf_base);
 
 /*
  * Initialize data pools for constant-time allocation.
@@ -173,8 +174,8 @@ int st_rewrite_stack(st_handle handle_src,
           arch_name(handle_src->arch), arch_name(handle_dest->arch));
 
   /* Initialize rewriting contexts. */
-  src = init_src_context(handle_src, regset_src, sp_base_src);
-  dest = init_dest_context(handle_dest, regset_dest, sp_base_dest);
+  src = init_src_context(handle_src, regset_src, sp_base_src, sp_base_src);
+  dest = init_dest_context(handle_dest, regset_dest, sp_base_dest, sp_base_dest);
 
   if(!src || !dest)
   {
@@ -185,6 +186,44 @@ int st_rewrite_stack(st_handle handle_src,
 
   return __st_rewrite_stack(src, dest);
 }
+
+int st_rewrite_relocated_stack(st_handle handle_src,
+			       void* regset_src,
+			       void* stack_buf_src,
+			       void* sp_base_src,
+			       st_handle handle_dest,
+			       void* regset_dest,
+			       void* stack_buf_dest,
+			       void* sp_base_dest)
+{
+  rewrite_context src, dest;
+
+  if(!handle_src || !regset_src || !sp_base_src || !stack_buf_src ||
+     !handle_dest || !regset_dest || !sp_base_dest || !stack_buf_dest)
+  {
+    ST_WARN("invalid arguments\n");
+    return 1;
+  }
+
+  TIMER_START(st_rewrite_stack);
+
+  ST_INFO("--> Initializing rewrite (%s -> %s) <--\n",
+          arch_name(handle_src->arch), arch_name(handle_dest->arch));
+
+  /* Initialize rewriting contexts. */
+  src = init_src_context(handle_src, regset_src, sp_base_src, stack_buf_src);
+  dest = init_dest_context(handle_dest, regset_dest, sp_base_dest, stack_buf_dest);
+
+  if(!src || !dest)
+  {
+    if(src) free_context(src);
+    if(dest) free_context(dest);
+    return 1;
+  }
+
+  return __st_rewrite_stack(src, dest);
+}
+
 
 /*
  * Perform stack transformation for the top frame.  Replace return address so
@@ -214,7 +253,8 @@ int st_rewrite_ondemand(st_handle handle_src,
  */
 static rewrite_context init_src_context(st_handle handle,
                                         void* regset,
-                                        void* sp_base)
+                                        void* sp_base,
+					void *sp_buf_base)
 {
   rewrite_context ctx;
 
@@ -230,6 +270,7 @@ static rewrite_context init_src_context(st_handle handle,
   ctx->act = 0;
   ctx->regs = regset;
   ctx_set_stack_base(ctx, sp_base);
+  ctx_set_stack_buf_base(ctx, sp_buf_base);
 
   init_data_pools(ctx);
   list_init(fixup, &ctx->stack_pointers);
@@ -259,7 +300,8 @@ static rewrite_context init_src_context(st_handle handle,
  */
 static rewrite_context init_dest_context(st_handle handle,
                                          void* regset,
-                                         void* sp_base)
+                                         void* sp_base,
+					 void *sp_buf_base)
 {
   rewrite_context ctx;
 
@@ -275,6 +317,7 @@ static rewrite_context init_dest_context(st_handle handle,
   ctx->act = 0;
   ctx->regs = regset;
   ctx_set_stack_base(ctx, sp_base);
+  ctx_set_stack_buf_base(ctx, sp_buf_base);
 
   init_data_pools(ctx);
   list_init(fixup, &ctx->stack_pointers);

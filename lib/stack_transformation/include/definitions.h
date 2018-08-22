@@ -209,6 +209,7 @@ typedef struct _st_handle* st_handle;
 struct stack_info {
 	void *stack_base; /* highest stack address */
 	void *stack; /* top of stack (lowest stack address) */
+	void *buf_base;
 };
 
 /*
@@ -255,6 +256,11 @@ static inline void *ctx_stack_base(struct rewrite_context *ctx)
 	return ctx->st_info.stack_base;
 }
 
+static inline void *ctx_buf_base(struct rewrite_context *ctx)
+{
+	return ctx->st_info.buf_base;
+}
+
 static inline void ctx_set_stack(struct rewrite_context *ctx, void *stack)
 {
 	ctx->st_info.stack = stack;
@@ -266,11 +272,22 @@ static inline void ctx_set_stack_base(struct rewrite_context *ctx,
 	ctx->st_info.stack_base = stack_base;
 }
 
+static inline void ctx_set_stack_buf_base(struct rewrite_context *ctx,
+					  void *buf_base)
+{
+	ctx->st_info.buf_base = buf_base;
+}
+
+static int64_t ctx_stack_off(struct rewrite_context *ctx)
+{
+	return (int64_t)(ctx->st_info.stack_base - ctx->st_info.buf_base);
+}
+
 typedef struct rewrite_context* rewrite_context;
 
 static inline void *cfa_to_fp(rewrite_context ctx, uint64_t cfa)
 {
-  return (void *)cfa;
+	return (void *)(cfa - ctx_stack_off(ctx));
 }
 
 static inline uint64_t fbp(rewrite_context ctx, regset_t regs)
@@ -285,7 +302,7 @@ static inline void set_fbp(rewrite_context ctx, regset_t regs, void *fbp)
 
 static inline void *frame_pointer(rewrite_context ctx, regset_t regs)
 {
-	return REGOPS(ctx)->__fbp(regs);
+	return REGOPS(ctx)->__fbp(regs) - ctx_stack_off(ctx);
 }
 
 static inline uint64_t sp(rewrite_context ctx, regset_t regs)
@@ -300,7 +317,7 @@ static inline void set_sp(rewrite_context ctx, regset_t regs, void *sp)
 
 static inline void *stack_pointer(rewrite_context ctx, regset_t regs)
 {
-	return REGOPS(ctx)->__sp(regs);
+	return REGOPS(ctx)->__sp(regs) - ctx_stack_off(ctx);
 }
 
 static inline void setup_fbp(rewrite_context ctx, regset_t regs, uint64_t fbp)

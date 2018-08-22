@@ -34,7 +34,7 @@ typedef struct stack_bounds {
 // Initialization & teardown
 ///////////////////////////////////////////////////////////////////////////////
 
-/* 
+/*
  * Open the ELF file named by FN & prep it to be used for rewriting.  The
  * handle returned from the function will be used in stack transformation
  * functions to provide information about the specified binary.
@@ -98,6 +98,37 @@ int st_rewrite_stack(st_handle src,
                      void* sp_base_dest);
 
 /*
+ * Rewrite the stack in its entirety from its current form (source) to the
+ * requested form (destination).
+ * The actual stack buffers are relocated from their "live" position
+ *
+ * @param src a stack transformation handle which has transformation metadata
+ *            for the source binary
+ * @param regset_src a pointer to a filled register set representing the
+ *                   thread's state
+ * @param stack_buf_src the base of a buffer in memory containing source
+ *                      stack data
+ * @param sp_base_src source stack base, i.e., highest stack address
+ * @param dest a stack transformation handle which has transformation metadata
+ *             for the destination binary
+ * @param regset_dest a pointer to a register set to be filled with destination
+ *                    thread's state
+ * @param stack_buf_dest the base of a buffer in memory to fill with the
+ *                       destination stack data
+ * @param sp_base_dest destination stack base, i.e., highest stack address
+ *                     (will fill downwards with activation records)
+ * @return 0 if succesful, or 1 otherwise
+ */
+int st_rewrite_relocated_stack(st_handle handle_src,
+			       void* regset_src,
+			       void* stack_buf_src,
+			       void* sp_base_src,
+			       st_handle handle_dest,
+			       void* regset_dest,
+			       void* stack_buf_dest,
+			       void* sp_base_dest);
+
+/*
  * Rewrite only the top frame of the stack.  Previous frames will be
  * re-written on-demand as the thread unwinds the call stack.
  *
@@ -134,4 +165,3 @@ stack_bounds get_stack_bounds();
 #endif
 
 #endif /* _ST_H */
-

@@ -321,6 +321,7 @@ static inline void* get_val_loc(rewrite_context ctx,
   case SM_INDIRECT: // Value is in register, but spilled to the stack
     val_loc = *(void**)REGOPS(ctx)->reg(ctx->acts[act].regs, regnum) +
               offset_or_constant;
+    val_loc -= ctx_stack_off(ctx);
     ST_RAW_INFO("live value at stack address %p\n", val_loc);
     break;
   case SM_CONSTANT: // Value is constant
